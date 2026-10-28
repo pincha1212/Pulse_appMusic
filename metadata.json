@@ -1,0 +1,6 @@
+{
+  "name": "Pulse",
+  "description": "Ultra-lightweight local music player (v2.0.0) optimized for low-end Android devices with Playlists, Favorites, Hardware DSP Loudness Enhancer, Lyrics reader, and pre-calculated waveforms.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

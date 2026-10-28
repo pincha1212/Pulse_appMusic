@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">Pulse</string>
+    <string name="search_placeholder">Buscar pistas o artistas…</string>
+    <string name="no_tracks_found">No se encontraron pistas</string>
+    <string name="no_tracks_sub">Escanea tu almacenamiento o añade archivos de música</string>
+    <string name="amoled_mode">Modo AMOLED</string>
+    <string name="scan_storage">Escanear biblioteca</string>
+    <string name="tracks_count">%1$d pistas</string>
+    <string name="now_playing">Reproduciendo</string>
+    <string name="unknown_artist">Artista desconocido</string>
+    <string name="unknown_album">Álbum desconocido</string>
+    <string name="unknown_track">Pista desconocida</string>
+    <string name="permission_required">Permiso de almacenamiento requerido</string>
+    <string name="permission_description">Pulse necesita acceso a tus archivos de audio para reproducir tu música local.</string>
+    <string name="grant_permission">Conceder permiso</string>
+    <string name="memory_usage">RAM activa: &lt;60 MB</string>
+    <string name="app_version">v2.0.0</string>
+    <string name="build_audit_title">Auditoría del Sistema</string>
+    <string name="tab_all_songs">Todas</string>
+    <string name="tab_favorites">Favoritos</string>
+    <string name="tab_playlists">Listas</string>
+    <string name="tab_albums">Álbumes</string>
+    <string name="create_playlist">Nueva Lista</string>
+    <string name="playlist_name_hint">Nombre de la lista…</string>
+    <string name="add_to_playlist">Añadir a lista</string>
+    <string name="loudness_enhancer_title">Realce de Volumen DSP (Preamp)</string>
+    <string name="lyrics_title">Letras y Notas</string>
+    <string name="lyrics_empty">No hay letra disponible. Toca para añadir notas.</string>
+    <string name="crossfade_title">Fundido de Audio (Crossfade)</string>
+</resources>
