@@ -40,9 +40,8 @@ object OtaUpdateManager {
         if (cleanRepo.isBlank() || !cleanRepo.contains("/")) return@withContext null
 
         try {
-            val apiUrl = "https://api.github.com/repos/$cleanRepo/releases/latest"
-            val url = URL(apiUrl)
-            val connection = (url.openConnection() as HttpURLConnection).apply {
+            var jsonStr = ""
+            val connection = (URL("https://api.github.com/repos/$cleanRepo/releases/latest").openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/vnd.github.v3+json")
                 setRequestProperty("User-Agent", "PulseMusicPlayer-OTA")
@@ -50,9 +49,27 @@ object OtaUpdateManager {
                 readTimeout = 8000
             }
 
-            if (connection.responseCode != 200) return@withContext null
+            if (connection.responseCode == 200) {
+                jsonStr = connection.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                // Fallback to releases list
+                val listConn = (URL("https://api.github.com/repos/$cleanRepo/releases").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    setRequestProperty("Accept", "application/vnd.github.v3+json")
+                    setRequestProperty("User-Agent", "PulseMusicPlayer-OTA")
+                    connectTimeout = 8000
+                    readTimeout = 8000
+                }
+                if (listConn.responseCode == 200) {
+                    val listStr = listConn.inputStream.bufferedReader().use { it.readText() }
+                    val array = JSONArray(listStr)
+                    if (array.length() > 0) {
+                        jsonStr = array.getJSONObject(0).toString()
+                    }
+                }
+            }
 
-            val jsonStr = connection.inputStream.bufferedReader().use { it.readText() }
+            if (jsonStr.isBlank()) return@withContext null
             val json = JSONObject(jsonStr)
 
             val tagName = json.optString("tag_name", "v3.0.0")
