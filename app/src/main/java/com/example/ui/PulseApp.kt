@@ -403,10 +403,21 @@ fun PulseApp(viewModel: MusicViewModel) {
                     onSpeedPitchChange = viewModel::setPlaybackSpeedAndPitch,
                     loudnessGainMb = uiState.loudnessGainMb,
                     onLoudnessGainChange = viewModel::setLoudnessBoost,
+                    bassBoostStrength = uiState.bassBoostStrength,
+                    onBassBoostChange = viewModel::setBassBoostStrength,
+                    virtualizerStrength = uiState.virtualizerStrength,
+                    onVirtualizerChange = viewModel::setVirtualizerStrength,
                     crossfadeDurationSec = uiState.crossfadeDurationSec,
                     onCrossfadeDurationChange = viewModel::setCrossfadeDuration,
                     isScanning = uiState.isScanning,
                     onScanStorage = viewModel::scanStorage,
+                    githubRepoPath = uiState.githubRepoPath,
+                    onGithubRepoPathChange = viewModel::setGithubRepoPath,
+                    isCheckingOtaUpdate = uiState.isCheckingOtaUpdate,
+                    otaUpdateInfo = uiState.otaUpdateInfo,
+                    otaStatusMessage = uiState.otaStatusMessage,
+                    onCheckOtaUpdate = viewModel::checkForOtaUpdates,
+                    onTriggerOtaInstall = { viewModel.triggerOtaInstall(context) },
                     onDismissRequest = { viewModel.setSettingsSheetOpen(false) }
                 )
             }

@@ -35,6 +35,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+import android.content.Context
+import com.example.BuildConfig
+import com.example.ui.util.OtaUpdateInfo
+import com.example.ui.util.OtaUpdateManager
+
 enum class LibraryTab {
     ALL, FAVORITES, MOST_PLAYED, RECENTLY_PLAYED, PLAYLISTS, ALBUMS
 }
@@ -89,7 +94,12 @@ data class UIState(
     val virtualizerStrength: Int = 0, // 0 to 1000
     val playbackQueue: List<CancionEntity> = emptyList(),
     val isQueueSheetOpen: Boolean = false,
-    val visualizerMode: Int = 0 // 0: Waveform, 1: Frequency Bars
+    val visualizerMode: Int = 0, // 0: Waveform, 1: Frequency Bars
+    // OTA Auto-Update features:
+    val githubRepoPath: String = "rfbarzola25/PulseMusicPlayer",
+    val isCheckingOtaUpdate: Boolean = false,
+    val otaUpdateInfo: OtaUpdateInfo? = null,
+    val otaStatusMessage: String? = null
 ) {
     val progressFraction: Float
         get() {
@@ -499,6 +509,53 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setCrossfadeDuration(seconds: Int) {
         _uiState.update { it.copy(crossfadeDurationSec = seconds.coerceIn(0, 8)) }
+    }
+
+    fun setBassBoostStrength(strength: Int) {
+        _uiState.update { it.copy(bassBoostStrength = strength.coerceIn(0, 1000)) }
+    }
+
+    fun setVirtualizerStrength(strength: Int) {
+        _uiState.update { it.copy(virtualizerStrength = strength.coerceIn(0, 1000)) }
+    }
+
+    fun setGithubRepoPath(path: String) {
+        _uiState.update { it.copy(githubRepoPath = path) }
+    }
+
+    fun checkForOtaUpdates() {
+        val repo = _uiState.value.githubRepoPath
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCheckingOtaUpdate = true, otaStatusMessage = "Conectando con GitHub Releases...") }
+            val info = OtaUpdateManager.checkForUpdates(repo, BuildConfig.VERSION_NAME)
+            if (info != null) {
+                _uiState.update {
+                    it.copy(
+                        isCheckingOtaUpdate = false,
+                        otaUpdateInfo = info,
+                        otaStatusMessage = if (info.isUpdateAvailable) "¡Nueva versión ${info.tagName} disponible!" else "¡Pulse v${BuildConfig.VERSION_NAME} está actualizado!"
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isCheckingOtaUpdate = false,
+                        otaStatusMessage = "No se pudo verificar. Revisa el repositorio '$repo' o tu conexión."
+                    )
+                }
+            }
+        }
+    }
+
+    fun triggerOtaInstall(context: Context) {
+        val info = _uiState.value.otaUpdateInfo ?: return
+        OtaUpdateManager.downloadAndInstallApk(
+            context = context,
+            downloadUrl = info.downloadUrl,
+            versionName = info.versionName
+        ) { status ->
+            _uiState.update { it.copy(otaStatusMessage = status) }
+        }
     }
 
     fun toggleLyricsView() {

@@ -880,11 +880,13 @@ fun NeonFrequencyVisualizer(
         label = "pulsePhase"
     )
 
+    val unplayedColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+
     Canvas(
         modifier = modifier
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
-                    HapticFeedbackHelper.seek(context)
+                    HapticFeedbackHelper.click(context)
                     val fraction = (offset.x / size.width).coerceIn(0f, 1f)
                     onSeek(fraction)
                 }
@@ -892,7 +894,7 @@ fun NeonFrequencyVisualizer(
             .pointerInput(Unit) {
                 detectDragGestures { change, _ ->
                     change.consume()
-                    HapticFeedbackHelper.seek(context)
+                    HapticFeedbackHelper.tick(context)
                     val fraction = (change.position.x / size.width).coerceIn(0f, 1f)
                     onSeek(fraction)
                 }
@@ -923,7 +925,7 @@ fun NeonFrequencyVisualizer(
             val color = if (isPlayed) {
                 if (i % 2 == 0) ElectricCyan else NeonViolet
             } else {
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                unplayedColor
             }
 
             drawRoundRect(

@@ -25,11 +25,18 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -71,6 +78,13 @@ fun SettingsBottomSheet(
     onCrossfadeDurationChange: (Int) -> Unit,
     isScanning: Boolean,
     onScanStorage: () -> Unit,
+    githubRepoPath: String = "rfbarzola25/PulseMusicPlayer",
+    onGithubRepoPathChange: (String) -> Unit = {},
+    isCheckingOtaUpdate: Boolean = false,
+    otaUpdateInfo: com.example.ui.util.OtaUpdateInfo? = null,
+    otaStatusMessage: String? = null,
+    onCheckOtaUpdate: () -> Unit = {},
+    onTriggerOtaInstall: () -> Unit = {},
     onDismissRequest: () -> Unit
 ) {
     val context = LocalContext.current
@@ -275,7 +289,7 @@ fun SettingsBottomSheet(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.GraphicEq,
+                            imageVector = Icons.Default.Equalizer,
                             contentDescription = null,
                             tint = ElectricCyan,
                             modifier = Modifier.size(18.dp)
@@ -591,7 +605,152 @@ fun SettingsBottomSheet(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 7. System Audit & Version Information v2.0.0
+            // 6b. Actualizaciones Inalámbricas OTA (GitHub Workflow)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .border(
+                        1.dp,
+                        ElectricCyan.copy(alpha = 0.3f),
+                        RoundedCornerShape(16.dp)
+                    )
+                    .padding(14.dp)
+                    .testTag("ota_update_card")
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDownload,
+                            contentDescription = null,
+                            tint = ElectricCyan,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Actualizaciones Inalámbricas OTA",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(ElectricCyan.copy(alpha = 0.2f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "GitHub Actions",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ElectricCyan
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Obtén cambios y nuevas versiones directamente desde GitHub Releases sin necesidad de conectar por cable USB.",
+                    fontSize = 11.sp,
+                    color = TextSecondary,
+                    lineHeight = 15.sp
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = githubRepoPath,
+                    onValueChange = onGithubRepoPathChange,
+                    label = { Text("Repositorio GitHub (usuario/repo)", fontSize = 11.sp) },
+                    placeholder = { Text("ej. usuario/PulseMusicPlayer", fontSize = 11.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ElectricCyan,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                        focusedLabelColor = ElectricCyan,
+                        unfocusedLabelColor = TextSecondary
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = {
+                            HapticFeedbackHelper.click(context)
+                            onCheckOtaUpdate()
+                        },
+                        enabled = !isCheckingOtaUpdate && githubRepoPath.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan, contentColor = Color.Black),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        if (isCheckingOtaUpdate) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color.Black,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Buscando...", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Buscar Versión", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    if (otaUpdateInfo != null && otaUpdateInfo.isUpdateAvailable) {
+                        Button(
+                            onClick = {
+                                HapticFeedbackHelper.heavyClick(context)
+                                onTriggerOtaInstall()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonViolet, contentColor = Color.White),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SystemUpdate,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Instalar ${otaUpdateInfo.tagName}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                if (!otaStatusMessage.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = otaStatusMessage,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (otaUpdateInfo?.isUpdateAvailable == true) ElectricCyan else TextSecondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // 7. System Audit & Version Information v3.0.0
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
