@@ -18,6 +18,12 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
+data class OtaCheckResult(
+    val info: OtaUpdateInfo?,
+    val statusMessage: String,
+    val isSuccess: Boolean
+)
+
 data class OtaUpdateInfo(
     val tagName: String,
     val versionName: String,
@@ -29,50 +35,76 @@ data class OtaUpdateInfo(
 object OtaUpdateManager {
 
     /**
-     * Checks GitHub API for the latest release in the target repository.
-     * e.g. repo: "rfbarzola25/PulseMusicPlayer" or "owner/repository"
+     * Checks GitHub API for the latest release in the target repository with detailed diagnostics.
      */
-    suspend fun checkForUpdates(
+    suspend fun checkUpdateStatus(
         repoPath: String,
         currentVersionName: String
-    ): OtaUpdateInfo? = withContext(Dispatchers.IO) {
-        val cleanRepo = repoPath.trim().removePrefix("https://github.com/").removePrefix("/")
-        if (cleanRepo.isBlank() || !cleanRepo.contains("/")) return@withContext null
+    ): OtaCheckResult = withContext(Dispatchers.IO) {
+        val cleanRepo = repoPath.trim()
+            .removePrefix("https://github.com/")
+            .removePrefix("http://github.com/")
+            .removePrefix("/")
+            .ifBlank { "pincha1212/Pulse_appMusic" }
+
+        if (!cleanRepo.contains("/")) {
+            return@withContext OtaCheckResult(null, "Ruta de repositorio no válida.", false)
+        }
 
         try {
             var jsonStr = ""
-            val connection = (URL("https://api.github.com/repos/$cleanRepo/releases/latest").openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                setRequestProperty("Accept", "application/vnd.github.v3+json")
-                setRequestProperty("User-Agent", "PulseMusicPlayer-OTA")
-                connectTimeout = 8000
-                readTimeout = 8000
-            }
+            var lastResponseCode = 0
 
-            if (connection.responseCode == 200) {
-                jsonStr = connection.inputStream.bufferedReader().use { it.readText() }
-            } else {
-                // Fallback to releases list
-                val listConn = (URL("https://api.github.com/repos/$cleanRepo/releases").openConnection() as HttpURLConnection).apply {
+            // 1. Intentar /releases/latest
+            try {
+                val conn = (URL("https://api.github.com/repos/$cleanRepo/releases/latest").openConnection() as HttpURLConnection).apply {
                     requestMethod = "GET"
+                    instanceFollowRedirects = true
                     setRequestProperty("Accept", "application/vnd.github.v3+json")
                     setRequestProperty("User-Agent", "PulseMusicPlayer-OTA")
                     connectTimeout = 8000
                     readTimeout = 8000
                 }
-                if (listConn.responseCode == 200) {
-                    val listStr = listConn.inputStream.bufferedReader().use { it.readText() }
-                    val array = JSONArray(listStr)
-                    if (array.length() > 0) {
-                        jsonStr = array.getJSONObject(0).toString()
-                    }
+                lastResponseCode = conn.responseCode
+                if (lastResponseCode == 200) {
+                    jsonStr = conn.inputStream.bufferedReader().use { it.readText() }
                 }
+            } catch (_: Exception) {}
+
+            // 2. Fallback a lista general de /releases
+            if (jsonStr.isBlank()) {
+                try {
+                    val listConn = (URL("https://api.github.com/repos/$cleanRepo/releases").openConnection() as HttpURLConnection).apply {
+                        requestMethod = "GET"
+                        instanceFollowRedirects = true
+                        setRequestProperty("Accept", "application/vnd.github.v3+json")
+                        setRequestProperty("User-Agent", "PulseMusicPlayer-OTA")
+                        connectTimeout = 8000
+                        readTimeout = 8000
+                    }
+                    lastResponseCode = listConn.responseCode
+                    if (lastResponseCode == 200) {
+                        val listStr = listConn.inputStream.bufferedReader().use { it.readText() }
+                        val array = JSONArray(listStr)
+                        if (array.length() > 0) {
+                            jsonStr = array.getJSONObject(0).toString()
+                        }
+                    }
+                } catch (_: Exception) {}
             }
 
-            if (jsonStr.isBlank()) return@withContext null
-            val json = JSONObject(jsonStr)
+            if (jsonStr.isBlank()) {
+                val errorMsg = when (lastResponseCode) {
+                    404 -> "No se encontraron releases publicadas aún en GitHub."
+                    403 -> "Límite de consultas a GitHub excedido temporalmente. Espera unos minutos."
+                    else -> "No hay releases disponibles o GitHub no respondió."
+                }
+                return@withContext OtaCheckResult(null, errorMsg, false)
+            }
 
-            val tagName = json.optString("tag_name", "v3.0.0")
+            val json = JSONObject(jsonStr)
+            val rawTag = json.optString("tag_name", "")
+            val rawName = json.optString("name", "")
             val releaseNotes = json.optString("body", "Nueva versión disponible.")
             val assets: JSONArray? = json.optJSONArray("assets")
 
@@ -91,22 +123,48 @@ object OtaUpdateManager {
                 }
             }
 
-            val onlineVersionClean = tagName.removePrefix("v").trim()
-            val currentVersionClean = currentVersionName.removePrefix("v").trim()
+            // Extraer versión limpia usando regex para contemplar tags como 'v4.2.1', 'true', o nombres
+            val versionRegex = Regex("""(\d+\.\d+(\.\d+)?)""")
+            val parsedOnlineVersion = versionRegex.find(rawTag)?.value
+                ?: versionRegex.find(rawName)?.value
+                ?: rawTag.removePrefix("v").trim()
 
-            val isNewer = isVersionNewer(onlineVersionClean, currentVersionClean)
+            val currentClean = versionRegex.find(currentVersionName)?.value ?: currentVersionName.removePrefix("v").trim()
+            val isNewer = isVersionNewer(parsedOnlineVersion, currentClean)
 
-            OtaUpdateInfo(
-                tagName = tagName,
-                versionName = onlineVersionClean,
+            val displayTag = if (rawTag.isNotBlank() && rawTag != "true") rawTag else "v$parsedOnlineVersion"
+
+            val info = OtaUpdateInfo(
+                tagName = displayTag,
+                versionName = parsedOnlineVersion,
                 downloadUrl = downloadUrl,
                 releaseNotes = releaseNotes,
                 isUpdateAvailable = isNewer && downloadUrl.isNotBlank()
             )
-        } catch (_: Exception) {
-            null
+
+            val message = if (downloadUrl.isBlank()) {
+                "Se detectó $displayTag pero aún no se adjuntó el archivo APK compilado en GitHub."
+            } else if (isNewer) {
+                "¡Nueva versión $displayTag disponible para instalar!"
+            } else {
+                "¡Pulse v$currentClean ya está en la versión más reciente!"
+            }
+
+            OtaCheckResult(info, message, true)
+        } catch (e: Exception) {
+            val errorText = when (e) {
+                is java.net.UnknownHostException -> "Sin conexión a internet o sin acceso a GitHub."
+                is java.net.SocketTimeoutException -> "Tiempo de espera agotado al conectar con GitHub."
+                else -> "Error de conexión: ${e.localizedMessage ?: "Fallo de red"}"
+            }
+            OtaCheckResult(null, errorText, false)
         }
     }
+
+    suspend fun checkForUpdates(
+        repoPath: String,
+        currentVersionName: String
+    ): OtaUpdateInfo? = checkUpdateStatus(repoPath, currentVersionName).info
 
     private fun isVersionNewer(online: String, current: String): Boolean {
         try {

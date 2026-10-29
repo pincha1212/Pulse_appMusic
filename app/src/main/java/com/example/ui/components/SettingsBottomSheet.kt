@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -76,9 +78,12 @@ fun SettingsBottomSheet(
     onVirtualizerChange: (Int) -> Unit,
     crossfadeDurationSec: Int,
     onCrossfadeDurationChange: (Int) -> Unit,
+    sleepTimerOption: Int = 0,
+    sleepTimerRemainingSec: Long = 0L,
+    onSetSleepTimer: (Int) -> Unit = {},
     isScanning: Boolean,
     onScanStorage: () -> Unit,
-    githubRepoPath: String = "rfbarzola25/PulseMusicPlayer",
+    githubRepoPath: String = "pincha1212/Pulse_appMusic",
     onGithubRepoPathChange: (String) -> Unit = {},
     isCheckingOtaUpdate: Boolean = false,
     otaUpdateInfo: com.example.ui.util.OtaUpdateInfo? = null,
@@ -528,6 +533,107 @@ fun SettingsBottomSheet(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
+
+            // Temporizador de Apagado (Sleep Timer)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Timer,
+                            contentDescription = "Temporizador de apagado",
+                            tint = ElectricCyan,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Temporizador de Apagado",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+
+                    if (sleepTimerOption != 0) {
+                        val countdownBadge = if (sleepTimerOption == -1) {
+                            "Fin de pista"
+                        } else {
+                            val mins = sleepTimerRemainingSec / 60
+                            val secs = sleepTimerRemainingSec % 60
+                            String.format("%02d:%02d", mins, secs)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(ElectricCyan.copy(alpha = 0.2f))
+                                .border(1.dp, ElectricCyan, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = countdownBadge,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ElectricCyan
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val presets = listOf(
+                        0 to "Off",
+                        15 to "15m",
+                        30 to "30m",
+                        45 to "45m",
+                        60 to "60m",
+                        -1 to "Fin"
+                    )
+                    presets.forEach { (mins, label) ->
+                        val isSelected = sleepTimerOption == mins
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) ElectricCyan.copy(alpha = 0.25f) else Color.Transparent)
+                                .border(
+                                    1.dp,
+                                    if (isSelected) ElectricCyan else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    HapticFeedbackHelper.click(context)
+                                    onSetSleepTimer(mins)
+                                }
+                                .padding(vertical = 7.dp)
+                                .testTag("sleep_timer_chip_$mins"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) ElectricCyan else TextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Playback Speed & Pitch Controls
             Column(

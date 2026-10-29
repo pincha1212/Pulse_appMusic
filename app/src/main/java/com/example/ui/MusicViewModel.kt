@@ -420,8 +420,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.update { it.copy(sleepTimerRemainingSec = remaining) }
                 }
                 if (remaining <= 0) {
-                    togglePlayPause()
-                    _uiState.update { it.copy(sleepTimerOption = 0, sleepTimerRemainingSec = 0L) }
+                    mediaController?.pause()
+                    _uiState.update { it.copy(isPlaying = false, sleepTimerOption = 0, sleepTimerRemainingSec = 0L) }
                 }
             }
         }
@@ -530,22 +530,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         val repo = _uiState.value.githubRepoPath
         viewModelScope.launch {
             _uiState.update { it.copy(isCheckingOtaUpdate = true, otaStatusMessage = "Conectando con GitHub Releases...") }
-            val info = OtaUpdateManager.checkForUpdates(repo, BuildConfig.VERSION_NAME)
-            if (info != null) {
-                _uiState.update {
-                    it.copy(
-                        isCheckingOtaUpdate = false,
-                        otaUpdateInfo = info,
-                        otaStatusMessage = if (info.isUpdateAvailable) "¡Nueva versión ${info.tagName} disponible!" else "¡Pulse v${BuildConfig.VERSION_NAME} está actualizado!"
-                    )
-                }
-            } else {
-                _uiState.update {
-                    it.copy(
-                        isCheckingOtaUpdate = false,
-                        otaStatusMessage = "No se pudo comprobar. Verifica tu conexión a internet."
-                    )
-                }
+            val result = OtaUpdateManager.checkUpdateStatus(repo, BuildConfig.VERSION_NAME)
+            _uiState.update {
+                it.copy(
+                    isCheckingOtaUpdate = false,
+                    otaUpdateInfo = result.info,
+                    otaStatusMessage = result.statusMessage
+                )
             }
         }
     }
