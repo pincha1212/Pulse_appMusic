@@ -30,6 +30,18 @@ interface CancionDao {
     @Query("UPDATE canciones SET lyrics = :lyrics WHERE id = :id")
     suspend fun updateLyrics(id: Long, lyrics: String)
 
+    @Query("SELECT * FROM canciones ORDER BY playCount DESC, titulo COLLATE NOCASE ASC LIMIT :limit")
+    fun getMostPlayed(limit: Int = 50): Flow<List<CancionEntity>>
+
+    @Query("SELECT * FROM canciones WHERE lastPlayedTimestamp > 0 ORDER BY lastPlayedTimestamp DESC LIMIT :limit")
+    fun getRecentlyPlayed(limit: Int = 50): Flow<List<CancionEntity>>
+
+    @Query("UPDATE canciones SET playCount = playCount + 1, lastPlayedTimestamp = :timestamp WHERE id = :id")
+    suspend fun recordPlay(id: Long, timestamp: Long)
+
+    @Query("SELECT * FROM canciones")
+    suspend fun getAllCancionesStatic(): List<CancionEntity>
+
     @Query("SELECT id FROM canciones WHERE isFavorite = 1")
     suspend fun getFavoriteIds(): List<Long>
 

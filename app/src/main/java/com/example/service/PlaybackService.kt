@@ -2,8 +2,10 @@ package com.example.service
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
+import android.media.audiofx.Virtualizer
 import android.os.Bundle
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -23,19 +25,27 @@ class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private var equalizer: Equalizer? = null
     private var loudnessEnhancer: LoudnessEnhancer? = null
+    private var bassBoost: BassBoost? = null
+    private var virtualizer: Virtualizer? = null
     private var currentLoudnessGainMb: Int = 0
+    private var currentBassBoostStrength: Int = 0
+    private var currentVirtualizerStrength: Int = 0
 
     companion object {
         const val CMD_SET_EQ_PRESET = "com.example.pulse.SET_EQ_PRESET"
         const val CMD_SET_EQ_BAND = "com.example.pulse.SET_EQ_BAND"
         const val CMD_TOGGLE_EQ = "com.example.pulse.TOGGLE_EQ"
         const val CMD_SET_LOUDNESS_BOOST = "com.example.pulse.SET_LOUDNESS_BOOST"
+        const val CMD_SET_BASS_BOOST = "com.example.pulse.SET_BASS_BOOST"
+        const val CMD_SET_VIRTUALIZER = "com.example.pulse.SET_VIRTUALIZER"
 
         const val ARG_PRESET_NAME = "preset_name"
         const val ARG_BAND_INDEX = "band_index"
         const val ARG_BAND_LEVEL = "band_level"
         const val ARG_EQ_ENABLED = "eq_enabled"
         const val ARG_LOUDNESS_GAIN_MB = "loudness_gain_mb"
+        const val ARG_BASS_BOOST_STRENGTH = "bass_boost_strength"
+        const val ARG_VIRTUALIZER_STRENGTH = "virtualizer_strength"
     }
 
     override fun onCreate() {
@@ -94,6 +104,14 @@ class PlaybackService : MediaSessionService() {
                         val gainMb = args.getInt(ARG_LOUDNESS_GAIN_MB, 0)
                         setLoudnessGain(gainMb)
                     }
+                    CMD_SET_BASS_BOOST -> {
+                        val strength = args.getInt(ARG_BASS_BOOST_STRENGTH, 0)
+                        setBassBoost(strength)
+                    }
+                    CMD_SET_VIRTUALIZER -> {
+                        val strength = args.getInt(ARG_VIRTUALIZER_STRENGTH, 0)
+                        setVirtualizer(strength)
+                    }
                 }
                 return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
             }
@@ -128,6 +146,34 @@ class PlaybackService : MediaSessionService() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+
+        try {
+            bassBoost?.release()
+            bassBoost = BassBoost(0, sessionId).apply {
+                if (currentBassBoostStrength > 0 && strengthSupported) {
+                    enabled = true
+                    setStrength(currentBassBoostStrength.toShort())
+                } else {
+                    enabled = false
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        try {
+            virtualizer?.release()
+            virtualizer = Virtualizer(0, sessionId).apply {
+                if (currentVirtualizerStrength > 0 && strengthSupported) {
+                    enabled = true
+                    setStrength(currentVirtualizerStrength.toShort())
+                } else {
+                    enabled = false
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun setLoudnessGain(gainMb: Int) {
@@ -140,6 +186,44 @@ class PlaybackService : MediaSessionService() {
                 } else {
                     setTargetGain(0)
                     enabled = false
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun setBassBoost(strength: Int) {
+        currentBassBoostStrength = strength.coerceIn(0, 1000)
+        try {
+            bassBoost?.apply {
+                if (strengthSupported) {
+                    if (currentBassBoostStrength > 0) {
+                        enabled = true
+                        setStrength(currentBassBoostStrength.toShort())
+                    } else {
+                        setStrength(0)
+                        enabled = false
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun setVirtualizer(strength: Int) {
+        currentVirtualizerStrength = strength.coerceIn(0, 1000)
+        try {
+            virtualizer?.apply {
+                if (strengthSupported) {
+                    if (currentVirtualizerStrength > 0) {
+                        enabled = true
+                        setStrength(currentVirtualizerStrength.toShort())
+                    } else {
+                        setStrength(0)
+                        enabled = false
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -193,6 +277,16 @@ class PlaybackService : MediaSessionService() {
         try {
             loudnessEnhancer?.release()
             loudnessEnhancer = null
+        } catch (_: Exception) {}
+
+        try {
+            bassBoost?.release()
+            bassBoost = null
+        } catch (_: Exception) {}
+
+        try {
+            virtualizer?.release()
+            virtualizer = null
         } catch (_: Exception) {}
 
         mediaSession?.run {

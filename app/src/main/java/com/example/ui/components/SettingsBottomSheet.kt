@@ -63,6 +63,10 @@ fun SettingsBottomSheet(
     onSpeedPitchChange: (Float, Float) -> Unit,
     loudnessGainMb: Int,
     onLoudnessGainChange: (Int) -> Unit,
+    bassBoostStrength: Int,
+    onBassBoostChange: (Int) -> Unit,
+    virtualizerStrength: Int,
+    onVirtualizerChange: (Int) -> Unit,
     crossfadeDurationSec: Int,
     onCrossfadeDurationChange: (Int) -> Unit,
     isScanning: Boolean,
@@ -239,6 +243,186 @@ fun SettingsBottomSheet(
                                 .clickable {
                                     HapticFeedbackHelper.click(context)
                                     onLoudnessGainChange(gain)
+                                }
+                                .padding(vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) NeonViolet else TextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // 3b. Bass Boost Ultra (DSP por hardware)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.GraphicEq,
+                            contentDescription = null,
+                            tint = ElectricCyan,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Bass Boost Ultra (DSP)",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+
+                    Text(
+                        text = if (bassBoostStrength == 0) "Desactivado" else "${bassBoostStrength / 10}%",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (bassBoostStrength > 0) ElectricCyan else TextSecondary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Slider(
+                    value = bassBoostStrength.toFloat(),
+                    onValueChange = {
+                        onBassBoostChange(it.toInt())
+                    },
+                    valueRange = 0f..1000f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = ElectricCyan,
+                        activeTrackColor = ElectricCyan,
+                        inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                    ),
+                    modifier = Modifier.testTag("bass_boost_slider")
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val presets = listOf(0 to "Off", 400 to "Medio", 800 to "Fuerte", 1000 to "Ultra")
+                    presets.forEach { (strength, label) ->
+                        val isSelected = (bassBoostStrength == strength) || (strength == 400 && bassBoostStrength in 300..500) || (strength == 800 && bassBoostStrength in 700..900)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) ElectricCyan.copy(alpha = 0.25f) else Color.Transparent)
+                                .border(
+                                    1.dp,
+                                    if (isSelected) ElectricCyan else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    HapticFeedbackHelper.click(context)
+                                    onBassBoostChange(strength)
+                                }
+                                .padding(vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) ElectricCyan else TextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // 3c. Virtualizador 3D Espacial (DSP por hardware)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = null,
+                            tint = NeonViolet,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Virtualizador 3D Espacial",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+
+                    Text(
+                        text = if (virtualizerStrength == 0) "Desactivado" else "${virtualizerStrength / 10}%",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (virtualizerStrength > 0) NeonViolet else TextSecondary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Slider(
+                    value = virtualizerStrength.toFloat(),
+                    onValueChange = {
+                        onVirtualizerChange(it.toInt())
+                    },
+                    valueRange = 0f..1000f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = NeonViolet,
+                        activeTrackColor = NeonViolet,
+                        inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                    ),
+                    modifier = Modifier.testTag("virtualizer_slider")
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val presets = listOf(0 to "Off", 400 to "Estudio", 750 to "3D Amplio", 1000 to "Envolvente")
+                    presets.forEach { (strength, label) ->
+                        val isSelected = (virtualizerStrength == strength) || (strength == 400 && virtualizerStrength in 300..500) || (strength == 750 && virtualizerStrength in 650..850)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) NeonViolet.copy(alpha = 0.25f) else Color.Transparent)
+                                .border(
+                                    1.dp,
+                                    if (isSelected) NeonViolet else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    HapticFeedbackHelper.click(context)
+                                    onVirtualizerChange(strength)
                                 }
                                 .padding(vertical = 6.dp),
                             contentAlignment = Alignment.Center
@@ -441,7 +625,7 @@ fun SettingsBottomSheet(
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "v2.0.0",
+                            text = "v3.0.0",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = ElectricCyan
@@ -452,7 +636,7 @@ fun SettingsBottomSheet(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "• Versión de compilación: 2.0.0 (Build 2)\n• Motor de audio: Jetpack Media3 (ExoPlayer)\n• DSP: Hardware Equalizer (5 bandas) + Loudness Boost (+10dB)\n• Almacenamiento: Room v2 (Playlists, Favoritos, Letras/Notas)\n• Háptica: Perfiles táctiles de latencia ultrabaja\n• Consumo activo: < 60 MB RAM (1 GB hardware optimizado)",
+                    text = "• Versión de compilación: 3.0.0 (Build 3)\n• Motor de audio: Jetpack Media3 (ExoPlayer) con Cola Dinámica\n• DSP Nativo por Hardware: 5 Bandas EQ + Loudness Preamp (+10dB) + Bass Boost Ultra + Virtualizador 3D Espacial\n• Almacenamiento: Room v3 (Estadísticas Inteligentes, Playlists, Historial, Favoritos, Letras)\n• Visualizador: Espectro de Frecuencias de Neón en tiempo real\n• Háptica: Perfiles táctiles de latencia ultrabaja\n• Consumo activo: < 60 MB RAM (1 GB hardware optimizado)",
                     fontSize = 11.sp,
                     color = TextSecondary,
                     lineHeight = 16.sp

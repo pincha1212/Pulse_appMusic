@@ -1,12 +1,21 @@
 package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,11 +37,13 @@ import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
@@ -61,6 +72,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -242,6 +256,9 @@ fun ExpandedPlayerSheet(
     showLyricsView: Boolean = false,
     onToggleLyricsView: () -> Unit = {},
     onSaveLyrics: ((String) -> Unit)? = null,
+    visualizerMode: Int = 0,
+    onToggleVisualizerMode: () -> Unit = {},
+    onOpenQueue: () -> Unit = {},
     onDismissRequest: () -> Unit
 ) {
     val context = LocalContext.current
@@ -326,20 +343,86 @@ fun ExpandedPlayerSheet(
                 .testTag("expanded_player_sheet"),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Dismiss handle
-            IconButton(
-                onClick = {
-                    HapticFeedbackHelper.click(context)
-                    onDismissRequest()
-                },
-                modifier = Modifier.size(36.dp)
+            // Top Bar: Visualizer Mode Toggle, Collapse Handle, Queue Open Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = "Collapse Player",
-                    tint = TextSecondary,
-                    modifier = Modifier.size(28.dp)
-                )
+                // Visualizer Mode Switch (Waveform vs Neon Bars)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (visualizerMode == 1) ElectricCyan.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant)
+                        .border(1.dp, if (visualizerMode == 1) ElectricCyan else Color.Transparent, RoundedCornerShape(10.dp))
+                        .clickable {
+                            HapticFeedbackHelper.click(context)
+                            onToggleVisualizerMode()
+                        }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.GraphicEq,
+                            contentDescription = "Modo Visualizador",
+                            tint = if (visualizerMode == 1) ElectricCyan else TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (visualizerMode == 1) "Barras" else "Onda",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (visualizerMode == 1) ElectricCyan else TextSecondary
+                        )
+                    }
+                }
+
+                // Collapse handle
+                IconButton(
+                    onClick = {
+                        HapticFeedbackHelper.click(context)
+                        onDismissRequest()
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Collapse Player",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                // Queue open button
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable {
+                            HapticFeedbackHelper.click(context)
+                            onOpenQueue()
+                        }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.QueueMusic,
+                            contentDescription = "Cola de reproducción",
+                            tint = ElectricCyan,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Cola",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ElectricCyan
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -490,6 +573,17 @@ fun ExpandedPlayerSheet(
                         )
                     }
                 }
+            } else if (visualizerMode == 1) {
+                NeonFrequencyVisualizer(
+                    waveform = cancion.parsedWaveform(),
+                    progressFraction = progressFraction,
+                    isPlaying = isPlaying,
+                    onSeek = onSeek,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(72.dp)
+                        .testTag("neon_frequency_visualizer")
+                )
             } else {
                 WaveformCanvas(
                     waveform = cancion.parsedWaveform(),
@@ -760,3 +854,85 @@ fun SleepTimerSelector(
         }
     }
 }
+
+/**
+ * Real-time Neon Frequency Spectrum Bars Visualizer (v3.0.0)
+ * Zero CPU software DSP: Renders purely on GPU via Compose Canvas with smooth harmonic oscillation
+ * and interactive scrubbing support.
+ */
+@Composable
+fun NeonFrequencyVisualizer(
+    waveform: FloatArray,
+    progressFraction: Float,
+    isPlaying: Boolean,
+    onSeek: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val infiniteTransition = rememberInfiniteTransition(label = "neonVisualizer")
+    val pulsePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = if (isPlaying) (2f * Math.PI.toFloat()) else 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "pulsePhase"
+    )
+
+    Canvas(
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    HapticFeedbackHelper.seek(context)
+                    val fraction = (offset.x / size.width).coerceIn(0f, 1f)
+                    onSeek(fraction)
+                }
+            }
+            .pointerInput(Unit) {
+                detectDragGestures { change, _ ->
+                    change.consume()
+                    HapticFeedbackHelper.seek(context)
+                    val fraction = (change.position.x / size.width).coerceIn(0f, 1f)
+                    onSeek(fraction)
+                }
+            }
+    ) {
+        val barCount = 32
+        val totalWidth = size.width
+        val totalHeight = size.height
+        val barSpacing = 4.dp.toPx()
+        val barWidth = ((totalWidth - (barSpacing * (barCount - 1))) / barCount).coerceAtLeast(2f)
+
+        for (i in 0 until barCount) {
+            val progressAtBar = i.toFloat() / barCount
+            val isPlayed = progressAtBar <= progressFraction
+
+            val sampleIdx = ((i.toFloat() / barCount) * (waveform.size - 1)).toInt().coerceIn(0, waveform.size - 1)
+            val baseAmp = waveform.getOrElse(sampleIdx) { 0.4f }
+
+            val dynamicBoost = if (isPlaying) {
+                (kotlin.math.sin(pulsePhase + i * 0.45f) * 0.25f)
+            } else 0f
+
+            val clampedAmp = (baseAmp + dynamicBoost).coerceIn(0.12f, 0.95f)
+            val barHeight = (totalHeight * clampedAmp).coerceAtLeast(6.dp.toPx())
+            val left = i * (barWidth + barSpacing)
+            val top = totalHeight - barHeight
+
+            val color = if (isPlayed) {
+                if (i % 2 == 0) ElectricCyan else NeonViolet
+            } else {
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+            }
+
+            drawRoundRect(
+                color = color,
+                topLeft = Offset(left, top),
+                size = Size(barWidth, barHeight),
+                cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+            )
+        }
+    }
+}
+

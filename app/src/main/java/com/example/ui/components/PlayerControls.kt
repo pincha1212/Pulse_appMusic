@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Speed
@@ -90,6 +91,7 @@ fun SongItemRow(
     onSongClick: (CancionEntity) -> Unit,
     onToggleFavorite: ((CancionEntity) -> Unit)? = null,
     onAddToPlaylist: ((CancionEntity) -> Unit)? = null,
+    onPlayNext: ((CancionEntity) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -229,6 +231,27 @@ fun SongItemRow(
                             imageVector = Icons.Default.PlaylistAdd,
                             contentDescription = "Añadir a playlist",
                             tint = TextSecondary.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                if (onPlayNext != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .clickable {
+                                HapticFeedbackHelper.click(context)
+                                onPlayNext(cancion)
+                            }
+                            .testTag("play_next_${cancion.id}"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QueueMusic,
+                            contentDescription = "Reproducir siguiente",
+                            tint = ElectricCyan.copy(alpha = 0.8f),
                             modifier = Modifier.size(18.dp)
                         )
                     }

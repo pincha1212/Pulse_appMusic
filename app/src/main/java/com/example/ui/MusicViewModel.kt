@@ -36,7 +36,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 enum class LibraryTab {
-    ALL, FAVORITES, PLAYLISTS, ALBUMS
+    ALL, FAVORITES, MOST_PLAYED, RECENTLY_PLAYED, PLAYLISTS, ALBUMS
 }
 
 data class AlbumItem(
@@ -83,7 +83,13 @@ data class UIState(
     val crossfadeDurationSec: Int = 0, // 0 to 8 sec
     val showLyricsView: Boolean = false,
     val addToPlaylistSong: CancionEntity? = null,
-    val showCreatePlaylistDialog: Boolean = false
+    val showCreatePlaylistDialog: Boolean = false,
+    // v3.0.0 features:
+    val bassBoostStrength: Int = 0, // 0 to 1000
+    val virtualizerStrength: Int = 0, // 0 to 1000
+    val playbackQueue: List<CancionEntity> = emptyList(),
+    val isQueueSheetOpen: Boolean = false,
+    val visualizerMode: Int = 0 // 0: Waveform, 1: Frequency Bars
 ) {
     val progressFraction: Float
         get() {
@@ -290,6 +296,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             selAlbum != null -> selAlbum.canciones
             selPlaylist != null -> _uiState.value.playlistSongs
             currentTab == LibraryTab.FAVORITES -> allSongsCache.filter { it.isFavorite }
+            currentTab == LibraryTab.MOST_PLAYED -> allSongsCache.sortedByDescending { it.playCount }
+            currentTab == LibraryTab.RECENTLY_PLAYED -> allSongsCache.filter { it.lastPlayedTimestamp > 0 }
+                .sortedByDescending { it.lastPlayedTimestamp }
             else -> allSongsCache
         }
 
@@ -430,6 +439,64 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun setBassBoost(strength: Int) {
+        val clamped = strength.coerceIn(0, 1000)
+        _uiState.update { it.copy(bassBoostStrength = clamped) }
+        val controller = mediaController ?: return
+        val args = Bundle().apply {
+            putInt(PlaybackService.ARG_BASS_BOOST_STRENGTH, clamped)
+        }
+        controller.sendCustomCommand(
+            SessionCommand(PlaybackService.CMD_SET_BASS_BOOST, Bundle.EMPTY),
+            args
+        )
+    }
+
+    fun setVirtualizer(strength: Int) {
+        val clamped = strength.coerceIn(0, 1000)
+        _uiState.update { it.copy(virtualizerStrength = clamped) }
+        val controller = mediaController ?: return
+        val args = Bundle().apply {
+            putInt(PlaybackService.ARG_VIRTUALIZER_STRENGTH, clamped)
+        }
+        controller.sendCustomCommand(
+            SessionCommand(PlaybackService.CMD_SET_VIRTUALIZER, Bundle.EMPTY),
+            args
+        )
+    }
+
+    fun setVisualizerMode(mode: Int) {
+        _uiState.update { it.copy(visualizerMode = mode) }
+    }
+
+    fun setQueueSheetOpen(isOpen: Boolean) {
+        _uiState.update { it.copy(isQueueSheetOpen = isOpen) }
+    }
+
+    fun playNext(song: CancionEntity) {
+        val currentQueue = _uiState.value.playbackQueue.toMutableList()
+        currentQueue.add(0, song)
+        _uiState.update { it.copy(playbackQueue = currentQueue) }
+    }
+
+    fun addToQueue(song: CancionEntity) {
+        val currentQueue = _uiState.value.playbackQueue.toMutableList()
+        currentQueue.add(song)
+        _uiState.update { it.copy(playbackQueue = currentQueue) }
+    }
+
+    fun removeFromQueue(index: Int) {
+        val currentQueue = _uiState.value.playbackQueue.toMutableList()
+        if (index in currentQueue.indices) {
+            currentQueue.removeAt(index)
+            _uiState.update { it.copy(playbackQueue = currentQueue) }
+        }
+    }
+
+    fun clearQueue() {
+        _uiState.update { it.copy(playbackQueue = emptyList()) }
+    }
+
     fun setCrossfadeDuration(seconds: Int) {
         _uiState.update { it.copy(crossfadeDurationSec = seconds.coerceIn(0, 8)) }
     }
@@ -501,14 +568,24 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun play(cancion: CancionEntity) {
+        val now = System.currentTimeMillis()
+        val updatedSong = cancion.copy(
+            playCount = cancion.playCount + 1,
+            lastPlayedTimestamp = now
+        )
         _uiState.update {
             it.copy(
-                cancionActual = cancion,
+                cancionActual = updatedSong,
                 durationMs = cancion.duracion,
                 currentPositionMs = 0L
             )
         }
         extractAmbientColors(cancion)
+
+        // Record play count and last played in database asynchronously
+        viewModelScope.launch {
+            repository.recordPlay(cancion.id, now)
+        }
 
         val controller = mediaController ?: return
 
@@ -561,6 +638,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun skipNext() {
+        // 1. If there are items in the user's custom Play Next / Queue, consume the front item
+        val queue = _uiState.value.playbackQueue
+        if (queue.isNotEmpty()) {
+            val nextSong = queue.first()
+            _uiState.update { it.copy(playbackQueue = queue.drop(1)) }
+            play(nextSong)
+            return
+        }
+
+        // 2. Otherwise navigate the current active library/playlist
         val list = if (_uiState.value.canciones.isNotEmpty()) _uiState.value.canciones else allSongsCache
         if (list.isEmpty()) return
 

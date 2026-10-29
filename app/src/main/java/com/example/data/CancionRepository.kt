@@ -65,16 +65,37 @@ class CancionRepository(
     fun getSongsForPlaylist(playlistId: Long): Flow<List<CancionEntity>> =
         playlistDao.getSongsForPlaylist(playlistId)
 
+    fun getMostPlayed(limit: Int = 50): Flow<List<CancionEntity>> =
+        cancionDao.getMostPlayed(limit)
+
+    fun getRecentlyPlayed(limit: Int = 50): Flow<List<CancionEntity>> =
+        cancionDao.getRecentlyPlayed(limit)
+
+    suspend fun recordPlay(id: Long, timestamp: Long = System.currentTimeMillis()) = withContext(Dispatchers.IO) {
+        try {
+            cancionDao.recordPlay(id, timestamp)
+        } catch (_: Exception) {}
+    }
+
     suspend fun refreshLibrary(): Int = withContext(Dispatchers.IO) {
-        val existingFavorites = try {
-            cancionDao.getFavoriteIds().toSet()
+        val existingMap = try {
+            cancionDao.getAllCancionesStatic().associateBy { it.id }
         } catch (_: Exception) {
-            emptySet()
+            emptyMap()
         }
         val scanned = audioScanner.scanMediaStore()
         if (scanned.isNotEmpty()) {
             val preserved = scanned.map { s ->
-                if (s.id in existingFavorites) s.copy(isFavorite = true) else s
+                val old = existingMap[s.id]
+                if (old != null) {
+                    s.copy(
+                        isFavorite = old.isFavorite,
+                        lyrics = old.lyrics,
+                        playCount = old.playCount,
+                        lastPlayedTimestamp = old.lastPlayedTimestamp,
+                        addedTimestamp = old.addedTimestamp
+                    )
+                } else s
             }
             cancionDao.deleteAll()
             cancionDao.insertAll(preserved)

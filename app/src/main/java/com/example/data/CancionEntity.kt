@@ -9,7 +9,9 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["titulo"]),
         Index(value = ["artista"]),
-        Index(value = ["isFavorite"])
+        Index(value = ["isFavorite"]),
+        Index(value = ["playCount"]),
+        Index(value = ["lastPlayedTimestamp"])
     ]
 )
 data class CancionEntity(
@@ -22,7 +24,10 @@ data class CancionEntity(
     val albumArtUri: String?,
     val waveformData: String,
     val isFavorite: Boolean = false,
-    val lyrics: String? = null
+    val lyrics: String? = null,
+    val playCount: Int = 0,
+    val lastPlayedTimestamp: Long = 0L,
+    val addedTimestamp: Long = System.currentTimeMillis()
 ) {
     /**
      * Lazily parsed float array representation of the 50 normalized waveform samples (0.1f - 1.0f).
