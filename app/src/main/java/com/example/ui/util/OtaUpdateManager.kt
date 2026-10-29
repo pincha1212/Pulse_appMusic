@@ -94,6 +94,13 @@ object OtaUpdateManager {
             }
 
             if (jsonStr.isBlank()) {
+                // Si la API REST de GitHub devolvió 403 (Rate Limit) o falló,
+                // consultar la ruta web pública (sin límite de 60 req/hora)
+                val webResult = checkViaWebEndpoint(cleanRepo, currentVersionName)
+                if (webResult != null) {
+                    return@withContext webResult
+                }
+
                 val errorMsg = when (lastResponseCode) {
                     404 -> "No se encontraron releases publicadas aún en GitHub."
                     403 -> "Límite de consultas a GitHub excedido temporalmente. Espera unos minutos."
@@ -179,6 +186,101 @@ object OtaUpdateManager {
             }
         } catch (_: Exception) {}
         return false
+    }
+
+    /**
+     * Consulta pública web directa de GitHub (releases/latest y releases.atom)
+     * para bypass total del límite de 60 consultas/hora de la API REST.
+     */
+    private fun checkViaWebEndpoint(cleanRepo: String, currentVersionName: String): OtaCheckResult? {
+        try {
+            // A) Redirección web: https://github.com/$cleanRepo/releases/latest
+            var detectedTag = ""
+            try {
+                val webConn = (URL("https://github.com/$cleanRepo/releases/latest").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    instanceFollowRedirects = false
+                    setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile)")
+                    connectTimeout = 8000
+                    readTimeout = 8000
+                }
+                val redirectLoc = webConn.getHeaderField("Location") ?: ""
+                if (redirectLoc.contains("/releases/tag/")) {
+                    detectedTag = redirectLoc.substringAfter("/releases/tag/").trim()
+                }
+            } catch (_: Exception) {}
+
+            // B) Si no hay redirect, consultar feed público Atom
+            if (detectedTag.isBlank()) {
+                try {
+                    val atomConn = (URL("https://github.com/$cleanRepo/releases.atom").openConnection() as HttpURLConnection).apply {
+                        requestMethod = "GET"
+                        setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile)")
+                        connectTimeout = 8000
+                        readTimeout = 8000
+                    }
+                    if (atomConn.responseCode == 200) {
+                        val xml = atomConn.inputStream.bufferedReader().use { it.readText() }
+                        val tagMatch = Regex("""/releases/tag/([^"'\s<]+)""").find(xml)
+                        if (tagMatch != null) {
+                            detectedTag = tagMatch.groupValues[1]
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+
+            if (detectedTag.isBlank()) return null
+
+            // C) Verificar APKs posibles: app-release.apk, app-debug.apk
+            val candidates = listOf("app-release.apk", "app-debug.apk", "app-release-unsigned.apk")
+            var verifiedDownloadUrl = ""
+            for (filename in candidates) {
+                val candidateUrl = "https://github.com/$cleanRepo/releases/download/$detectedTag/$filename"
+                try {
+                    val headConn = (URL(candidateUrl).openConnection() as HttpURLConnection).apply {
+                        requestMethod = "HEAD"
+                        instanceFollowRedirects = false
+                        setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile)")
+                        connectTimeout = 5000
+                        readTimeout = 5000
+                    }
+                    if (headConn.responseCode in listOf(200, 301, 302)) {
+                        verifiedDownloadUrl = candidateUrl
+                        break
+                    }
+                } catch (_: Exception) {}
+            }
+
+            if (verifiedDownloadUrl.isBlank()) {
+                // Si HEAD falló por restricciones de red, fallback a download url estándar
+                verifiedDownloadUrl = "https://github.com/$cleanRepo/releases/download/$detectedTag/app-debug.apk"
+            }
+
+            val versionRegex = Regex("""(\d+\.\d+(\.\d+)?)""")
+            val parsedVersion = versionRegex.find(detectedTag)?.value ?: detectedTag.removePrefix("v").trim()
+            val currentClean = versionRegex.find(currentVersionName)?.value ?: currentVersionName.removePrefix("v").trim()
+            val isNewer = isVersionNewer(parsedVersion, currentClean)
+
+            val displayTag = if (detectedTag.isNotBlank() && detectedTag != "true") detectedTag else "v$parsedVersion"
+
+            val info = OtaUpdateInfo(
+                tagName = displayTag,
+                versionName = parsedVersion,
+                downloadUrl = verifiedDownloadUrl,
+                releaseNotes = "Actualización detectada desde GitHub Releases.",
+                isUpdateAvailable = isNewer
+            )
+
+            val msg = if (isNewer) {
+                "¡Nueva versión $displayTag disponible!"
+            } else {
+                "¡Pulse v$currentClean ya está en la versión más reciente!"
+            }
+
+            return OtaCheckResult(info, msg, true)
+        } catch (_: Exception) {
+            return null
+        }
     }
 
     /**
