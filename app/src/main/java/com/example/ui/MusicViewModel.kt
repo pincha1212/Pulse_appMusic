@@ -95,6 +95,9 @@ data class UIState(
     val playbackQueue: List<CancionEntity> = emptyList(),
     val isQueueSheetOpen: Boolean = false,
     val visualizerMode: Int = 0, // 0: Waveform, 1: Frequency Bars
+    // v4.0.0 features:
+    val isAutoGenreEqEnabled: Boolean = true,
+    val editingSong: CancionEntity? = null,
     // OTA Auto-Update features:
     val githubRepoPath: String = "pincha1212/Pulse_appMusic",
     val isCheckingOtaUpdate: Boolean = false,
@@ -572,6 +575,38 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun toggleAutoGenreEq() {
+        _uiState.update { it.copy(isAutoGenreEqEnabled = !it.isAutoGenreEqEnabled) }
+    }
+
+    fun setEditingSong(song: CancionEntity?) {
+        _uiState.update { it.copy(editingSong = song) }
+    }
+
+    fun saveEditedSongMetadata(songId: Long, title: String, artist: String, album: String) {
+        viewModelScope.launch {
+            val cleanTitle = title.trim().ifBlank { "Sin título" }
+            val cleanArtist = artist.trim().ifBlank { "Artista desconocido" }
+            val cleanAlbum = album.trim().ifBlank { "Álbum desconocido" }
+
+            repository.updateSongMetadata(songId, cleanTitle, cleanArtist, cleanAlbum)
+
+            val current = _uiState.value.cancionActual
+            if (current?.id == songId) {
+                _uiState.update {
+                    it.copy(
+                        cancionActual = current.copy(
+                            titulo = cleanTitle,
+                            artista = cleanArtist,
+                            album = cleanAlbum
+                        )
+                    )
+                }
+            }
+            _uiState.update { it.copy(editingSong = null) }
+        }
+    }
+
     fun setPlaybackSpeedAndPitch(speed: Float, pitch: Float) {
         val newSpeed = speed.coerceIn(0.5f, 2.0f)
         val newPitch = pitch.coerceIn(0.5f, 2.0f)
@@ -638,6 +673,22 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
         extractAmbientColors(cancion)
+
+        if (_uiState.value.isAutoGenreEqEnabled) {
+            val titleLower = cancion.titulo.lowercase()
+            val artistLower = cancion.artista.lowercase()
+            val albumLower = cancion.album.lowercase()
+            val combined = "$titleLower $artistLower $albumLower"
+
+            val autoPreset = when {
+                combined.contains("rock") || combined.contains("metal") || combined.contains("guitar") -> "Rock"
+                combined.contains("bass") || combined.contains("synth") || combined.contains("cyber") || combined.contains("techno") || combined.contains("trap") || combined.contains("dance") -> "Bass Boost"
+                combined.contains("vocal") || combined.contains("pop") || combined.contains("voice") || combined.contains("sing") -> "Vocal"
+                combined.contains("acoustic") || combined.contains("jazz") || combined.contains("ambient") || combined.contains("piano") || combined.contains("nocturne") -> "Acústico"
+                else -> "Flat"
+            }
+            setEqPreset(autoPreset)
+        }
 
         // Record play count and last played in database asynchronously
         viewModelScope.launch {

@@ -43,7 +43,8 @@ fun WaveformCanvas(
     onTrimRangeChange: (Float, Float) -> Unit = { _, _ -> },
     activeColorStart: Color = ElectricCyan,
     activeColorEnd: Color = AccentGradientEnd,
-    inactiveColor: Color = WaveformInactive
+    inactiveColor: Color = WaveformInactive,
+    visualizerMode: Int = 0 // 0: Neon Bars, 1: Smooth Spline Curve, 2: Minimalist Dots
 ) {
     val context = LocalContext.current
     var isDragging by remember { mutableStateOf(false) }
@@ -155,48 +156,102 @@ fun WaveformCanvas(
             endX = canvasWidth * trimEndFraction
         )
 
-        for (i in 0 until totalBars) {
-            val barFraction = (i + 0.5f) / totalBars
+        if (visualizerMode == 2) {
+            // Mode 2: Minimalist Dots
+            for (i in 0 until totalBars) {
+                val barFraction = (i + 0.5f) / totalBars
+                val sample = if (i < waveform.size) waveform[i] else 0.35f
+                val centerX = i * slotWidth + slotWidth / 2f
+                val centerY = canvasHeight / 2f
+                val dotRadius = (sample * 5.dp.toPx()).coerceAtLeast(2.dp.toPx())
 
-            val sample = if (i < waveform.size) waveform[i] else 0.35f
-            val barHeight = (sample * canvasHeight * 0.85f).coerceAtLeast(4.dp.toPx())
+                val isPlayed = !isTrimModeActive && barFraction <= effectiveFraction
+                val inTrimRange = isTrimModeActive && barFraction in trimStartFraction..trimEndFraction
 
-            val left = i * slotWidth + (slotWidth - barWidth) / 2f
-            val top = (canvasHeight - barHeight) / 2f
-
-            if (isTrimModeActive) {
-                val inTrimRange = barFraction in trimStartFraction..trimEndFraction
-                if (inTrimRange) {
-                    drawRoundRect(
-                        brush = trimBrush,
-                        topLeft = Offset(left, top),
-                        size = Size(barWidth, barHeight),
-                        cornerRadius = cornerRadius
-                    )
-                } else {
-                    drawRoundRect(
-                        color = inactiveColor.copy(alpha = 0.15f),
-                        topLeft = Offset(left, top),
-                        size = Size(barWidth, barHeight),
-                        cornerRadius = cornerRadius
-                    )
+                val color = when {
+                    isTrimModeActive && inTrimRange -> ElectricCyan
+                    isTrimModeActive -> inactiveColor.copy(alpha = 0.15f)
+                    isPlayed -> activeColorStart
+                    else -> inactiveColor
                 }
-            } else {
-                val isPlayed = barFraction <= effectiveFraction
-                if (isPlayed) {
-                    drawRoundRect(
-                        brush = activeBrush,
-                        topLeft = Offset(left, top),
-                        size = Size(barWidth, barHeight),
-                        cornerRadius = cornerRadius
-                    )
+
+                drawCircle(
+                    color = color,
+                    radius = dotRadius,
+                    center = Offset(centerX, centerY)
+                )
+            }
+        } else if (visualizerMode == 1) {
+            // Mode 1: Smooth Continuous Waveform
+            for (i in 0 until totalBars) {
+                val barFraction = (i + 0.5f) / totalBars
+                val sample = if (i < waveform.size) waveform[i] else 0.35f
+                val centerX = i * slotWidth + slotWidth / 2f
+                val barHeight = (sample * canvasHeight * 0.80f).coerceAtLeast(3.dp.toPx())
+                val topY = (canvasHeight - barHeight) / 2f
+
+                val isPlayed = !isTrimModeActive && barFraction <= effectiveFraction
+                val inTrimRange = isTrimModeActive && barFraction in trimStartFraction..trimEndFraction
+
+                val color = when {
+                    isTrimModeActive && inTrimRange -> NeonViolet
+                    isTrimModeActive -> inactiveColor.copy(alpha = 0.15f)
+                    isPlayed -> activeColorStart
+                    else -> inactiveColor
+                }
+
+                drawLine(
+                    color = color,
+                    start = Offset(centerX, topY),
+                    end = Offset(centerX, topY + barHeight),
+                    strokeWidth = (slotWidth * 0.7f).coerceAtLeast(1.5.dp.toPx())
+                )
+            }
+        } else {
+            // Mode 0: Default Rounded Neon Bars
+            for (i in 0 until totalBars) {
+                val barFraction = (i + 0.5f) / totalBars
+
+                val sample = if (i < waveform.size) waveform[i] else 0.35f
+                val barHeight = (sample * canvasHeight * 0.85f).coerceAtLeast(4.dp.toPx())
+
+                val left = i * slotWidth + (slotWidth - barWidth) / 2f
+                val top = (canvasHeight - barHeight) / 2f
+
+                if (isTrimModeActive) {
+                    val inTrimRange = barFraction in trimStartFraction..trimEndFraction
+                    if (inTrimRange) {
+                        drawRoundRect(
+                            brush = trimBrush,
+                            topLeft = Offset(left, top),
+                            size = Size(barWidth, barHeight),
+                            cornerRadius = cornerRadius
+                        )
+                    } else {
+                        drawRoundRect(
+                            color = inactiveColor.copy(alpha = 0.15f),
+                            topLeft = Offset(left, top),
+                            size = Size(barWidth, barHeight),
+                            cornerRadius = cornerRadius
+                        )
+                    }
                 } else {
-                    drawRoundRect(
-                        color = inactiveColor,
-                        topLeft = Offset(left, top),
-                        size = Size(barWidth, barHeight),
-                        cornerRadius = cornerRadius
-                    )
+                    val isPlayed = barFraction <= effectiveFraction
+                    if (isPlayed) {
+                        drawRoundRect(
+                            brush = activeBrush,
+                            topLeft = Offset(left, top),
+                            size = Size(barWidth, barHeight),
+                            cornerRadius = cornerRadius
+                        )
+                    } else {
+                        drawRoundRect(
+                            color = inactiveColor,
+                            topLeft = Offset(left, top),
+                            size = Size(barWidth, barHeight),
+                            cornerRadius = cornerRadius
+                        )
+                    }
                 }
             }
         }

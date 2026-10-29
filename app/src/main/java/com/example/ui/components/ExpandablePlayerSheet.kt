@@ -593,6 +593,7 @@ fun ExpandedPlayerSheet(
                     trimStartFraction = trimStartFraction,
                     trimEndFraction = trimEndFraction,
                     onTrimRangeChange = onTrimRangeChange,
+                    visualizerMode = visualizerMode,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("expanded_waveform")

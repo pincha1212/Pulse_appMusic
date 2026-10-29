@@ -453,7 +453,8 @@ fun PulseApp(viewModel: MusicViewModel) {
                     onToggleFavorite = { uiState.cancionActual?.let { viewModel.toggleFavorite(it) } },
                     showLyricsView = uiState.showLyricsView,
                     onToggleLyricsView = viewModel::toggleLyricsView,
-                    onSaveLyrics = { lyrics -> uiState.cancionActual?.let { viewModel.saveLyrics(it.id, lyrics) } },
+                    visualizerMode = uiState.visualizerMode,
+                    onToggleVisualizerMode = { viewModel.setVisualizerMode((uiState.visualizerMode + 1) % 3) },
                     onDismissRequest = { viewModel.setPlayerExpanded(false) }
                 )
             }
@@ -615,6 +616,87 @@ fun PulseApp(viewModel: MusicViewModel) {
                     },
                     dismissButton = {
                         TextButton(onClick = { viewModel.setShowCreatePlaylistDialog(false) }) {
+                            Text("Cancelar", color = TextSecondary)
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(20.dp)
+                )
+            }
+
+            // Edit Song Metadata Dialog (v4.0.0 Tag Editor)
+            uiState.editingSong?.let { song ->
+                var editTitle by remember { mutableStateOf(song.titulo) }
+                var editArtist by remember { mutableStateOf(song.artista) }
+                var editAlbum by remember { mutableStateOf(song.album) }
+
+                AlertDialog(
+                    onDismissRequest = { viewModel.setEditingSong(null) },
+                    title = {
+                        Text(
+                            text = "Editar Metadatos",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = TextPrimary
+                        )
+                    },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = editTitle,
+                                onValueChange = { editTitle = it },
+                                label = { Text("Título de la canción", fontSize = 11.sp) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = ElectricCyan,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary
+                                )
+                            )
+
+                            OutlinedTextField(
+                                value = editArtist,
+                                onValueChange = { editArtist = it },
+                                label = { Text("Artista", fontSize = 11.sp) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = ElectricCyan,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary
+                                )
+                            )
+
+                            OutlinedTextField(
+                                value = editAlbum,
+                                onValueChange = { editAlbum = it },
+                                label = { Text("Álbum", fontSize = 11.sp) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = ElectricCyan,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary
+                                )
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                HapticFeedbackHelper.click(context)
+                                viewModel.saveEditedSongMetadata(song.id, editTitle, editArtist, editAlbum)
+                            }
+                        ) {
+                            Text("Guardar", color = ElectricCyan, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { viewModel.setEditingSong(null) }) {
                             Text("Cancelar", color = TextSecondary)
                         }
                     },
@@ -1001,7 +1083,7 @@ private fun TopHeaderSection(
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "v2.0.0",
+                        text = "v4.0.0",
                         color = ElectricCyan,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold

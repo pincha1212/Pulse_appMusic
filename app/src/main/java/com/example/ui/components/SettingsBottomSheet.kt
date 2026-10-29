@@ -740,7 +740,7 @@ fun SettingsBottomSheet(
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "v3.0.0",
+                            text = "v4.0.0",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = ElectricCyan
@@ -751,7 +751,7 @@ fun SettingsBottomSheet(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "• Versión de compilación: 3.0.0 (Build 3)\n• Motor de audio: Jetpack Media3 (ExoPlayer) con Cola Dinámica\n• DSP Nativo por Hardware: 5 Bandas EQ + Loudness Preamp (+10dB) + Bass Boost Ultra + Virtualizador 3D Espacial\n• Almacenamiento: Room v3 (Estadísticas Inteligentes, Playlists, Historial, Favoritos, Letras)\n• Visualizador: Espectro de Frecuencias de Neón en tiempo real\n• Háptica: Perfiles táctiles de latencia ultrabaja\n• Consumo activo: < 60 MB RAM (1 GB hardware optimizado)",
+                    text = "• Versión de compilación: 4.0.0 (Build 4)\n• Motor de audio: Jetpack Media3 (ExoPlayer) + Normalización Inteligente de Volumen\n• DSP Nativo por Hardware: 5 Bandas EQ Auto-por-Género + Loudness Boost (+10dB) + Bass Boost Ultra + Virtualizador 3D Espacial\n• Visualización de Audio: 3 Modos de Forma de Onda (Barras de Neón, Onda Continua y Puntos Minimalistas)\n• Editor de Etiquetas: Edición directa de Metadatos y Letras en tiempo real\n• Temporizador Inteligente: Apagado programado con atenuación progresiva de volumen (Fade-out)\n• Consumo activo: < 60 MB RAM (1 GB hardware optimizado)",
                     fontSize = 11.sp,
                     color = TextSecondary,
                     lineHeight = 16.sp

@@ -42,6 +42,10 @@ class CancionRepository(
         cancionDao.updateLyrics(id, lyrics)
     }
 
+    suspend fun updateSongMetadata(id: Long, titulo: String, artista: String, album: String) = withContext(Dispatchers.IO) {
+        cancionDao.updateSongMetadata(id, titulo, artista, album)
+    }
+
     // Playlists Operations
     fun getAllPlaylists(): Flow<List<PlaylistEntity>> = playlistDao.getAllPlaylists()
 
