@@ -104,16 +104,57 @@ fun SettingsBottomSheet(
                 .padding(horizontal = 24.dp, vertical = 12.dp)
                 .testTag("settings_bottom_sheet")
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Ajustes y Configuración",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "Personalización, motor DSP y sistema",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(ElectricCyan.copy(alpha = 0.15f))
+                        .border(1.dp, ElectricCyan.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = "v4.2.1",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ElectricCyan
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // ==========================================
+            // SECCIÓN 1: APARIENCIA Y ENERGÍA
+            // ==========================================
             Text(
-                text = "Ajustes y Configuración",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                text = "APARIENCIA Y ENERGÍA",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.2.sp,
+                color = ElectricCyan
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // 1. AMOLED Black / Dynamic Dark Toggle
+            // AMOLED Black / Dynamic Dark Toggle
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -171,35 +212,56 @@ fun SettingsBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-            // 2. Hardware DSP Equalizer Section
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Equalizer,
-                    contentDescription = null,
-                    tint = ElectricCyan,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Ecualizador Hardware DSP",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-            }
+            // ==========================================
+            // SECCIÓN 2: PROCESAMIENTO DE AUDIO DSP (HARDWARE)
+            // ==========================================
+            Text(
+                text = "PROCESAMIENTO DE AUDIO DSP",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.2.sp,
+                color = ElectricCyan
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            EqualizerChips(
-                currentPreset = eqPreset,
-                onPresetSelected = onEqPresetSelected
-            )
+            // Ecualizador Hardware DSP
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Equalizer,
+                        contentDescription = null,
+                        tint = ElectricCyan,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Ecualizador de 5 Bandas",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // 3. Hardware Loudness Enhancer (DSP Preamp / Volume Boost)
+                EqualizerChips(
+                    currentPreset = eqPreset,
+                    onPresetSelected = onEqPresetSelected
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Hardware Loudness Enhancer (DSP Preamp / Volume Boost)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -272,9 +334,9 @@ fun SettingsBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // 3b. Bass Boost Ultra (DSP por hardware)
+            // Bass Boost Ultra (DSP por hardware)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -362,9 +424,9 @@ fun SettingsBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // 3c. Virtualizador 3D Espacial (DSP por hardware)
+            // Virtualizador 3D Espacial (DSP por hardware)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -452,36 +514,57 @@ fun SettingsBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-            // 4. Playback Speed & Pitch
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Speed,
-                    contentDescription = null,
-                    tint = ElectricCyan,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Velocidad y Tono (Media3)",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-            }
+            // ==========================================
+            // SECCIÓN 3: REPRODUCCIÓN Y BIBLIOTECA
+            // ==========================================
+            Text(
+                text = "REPRODUCCIÓN Y BIBLIOTECA",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.2.sp,
+                color = ElectricCyan
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            SpeedPitchControls(
-                speed = speed,
-                pitch = pitch,
-                onSpeedPitchChange = onSpeedPitchChange
-            )
+            // Playback Speed & Pitch Controls
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Speed,
+                        contentDescription = null,
+                        tint = ElectricCyan,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Velocidad y Tono (Media3)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // 5. Audio Crossfade (Fundido Suave)
+                SpeedPitchControls(
+                    speed = speed,
+                    pitch = pitch,
+                    onSpeedPitchChange = onSpeedPitchChange
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Audio Crossfade (Fundido Suave)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -554,9 +637,9 @@ fun SettingsBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // 6. Library Scan and Room Maintenance
+            // Library Scan and Room Maintenance
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -587,7 +670,7 @@ fun SettingsBottomSheet(
                             color = TextPrimary
                         )
                         Text(
-                            text = "Reindexa MediaStore y calcula formas de onda",
+                            text = "Reindexa pistas y calcula formas de onda",
                             fontSize = 11.sp,
                             color = TextSecondary
                         )
@@ -603,9 +686,22 @@ fun SettingsBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-            // 6b. Actualización de Software Inalámbrica
+            // ==========================================
+            // SECCIÓN 4: ACTUALIZACIONES DEL SISTEMA
+            // ==========================================
+            Text(
+                text = "ACTUALIZACIONES DEL SISTEMA",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.2.sp,
+                color = ElectricCyan
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Actualización de Software Inalámbrica OTA
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -633,7 +729,7 @@ fun SettingsBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Actualización del Sistema",
+                            text = "Actualización Inalámbrica",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -706,7 +802,7 @@ fun SettingsBottomSheet(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 7. System Audit & Version Information v3.0.0
+            // Información y Auditoría del Sistema
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -726,7 +822,7 @@ fun SettingsBottomSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Pulse Music",
+                        text = "Pulse Music Player",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -740,7 +836,7 @@ fun SettingsBottomSheet(
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "v4.2.0",
+                            text = "v4.2.1",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = ElectricCyan
@@ -751,7 +847,7 @@ fun SettingsBottomSheet(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "• Versión de compilación: 4.2.0 (Build 6)\n• Panel Interactivo de Cola de Reproducción (Playback Queue Sheet)\n• Visualización de Próximas Canciones en Cola y Biblioteca\n• Gestión Dinámica de Cola: Reordenar, Eliminar y Vaciar Cola\n• Motor de Audio: Jetpack Media3 (ExoPlayer) + Normalización Inteligente de Volumen\n• DSP Nativo por Hardware: 5 Bandas EQ Auto-por-Género + Loudness Boost (+10dB) + Bass Boost Ultra + Virtualizador 3D Espacial\n• Visualización de Audio: 3 Modos de Forma de Onda (Barras de Neón, Onda Continua y Puntos Minimalistas)\n• Editor de Etiquetas: Edición directa de Metadatos y Letras en tiempo real\n• Consumo activo: < 60 MB RAM (1 GB hardware optimizado)",
+                    text = "• Versión de compilación: 4.2.1 (Build 7)\n• Nueva Estructura Modular de Ajustes: Apariencia, Audio DSP, Biblioteca y Sistema\n• Panel Interactivo de Cola de Reproducción (Playback Queue Sheet)\n• Gestión Dinámica de Cola: Reordenar, Eliminar y Vaciar Cola\n• Motor de Audio: Jetpack Media3 (ExoPlayer) + Normalización Inteligente de Volumen\n• DSP Nativo por Hardware: 5 Bandas EQ Auto-por-Género + Loudness Boost (+10dB) + Bass Boost Ultra + Virtualizador 3D Espacial\n• Visualización de Audio: 3 Modos de Forma de Onda (Barras de Neón, Onda Continua y Puntos Minimalistas)\n• Editor de Etiquetas: Edición directa de Metadatos y Letras en tiempo real\n• Consumo activo: < 60 MB RAM (1 GB hardware optimizado)",
                     fontSize = 11.sp,
                     color = TextSecondary,
                     lineHeight = 16.sp
