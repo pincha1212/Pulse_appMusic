@@ -96,7 +96,7 @@ data class UIState(
     val isQueueSheetOpen: Boolean = false,
     val visualizerMode: Int = 0, // 0: Waveform, 1: Frequency Bars
     // OTA Auto-Update features:
-    val githubRepoPath: String = "rfbarzola25/PulseMusicPlayer",
+    val githubRepoPath: String = "pincha1212/Pulse_appMusic",
     val isCheckingOtaUpdate: Boolean = false,
     val otaUpdateInfo: OtaUpdateInfo? = null,
     val otaStatusMessage: String? = null
@@ -540,7 +540,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update {
                     it.copy(
                         isCheckingOtaUpdate = false,
-                        otaStatusMessage = "No se pudo verificar. Revisa el repositorio '$repo' o tu conexión."
+                        otaStatusMessage = "No se pudo comprobar. Verifica tu conexión a internet."
                     )
                 }
             }
