@@ -740,7 +740,7 @@ fun SettingsBottomSheet(
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "v4.1.0",
+                            text = "v4.2.0",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = ElectricCyan
@@ -751,7 +751,7 @@ fun SettingsBottomSheet(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "• Versión de compilación: 4.1.0 (Build 5)\n• Corrección Completa de Linter y Warnings (100% Código Limpio)\n• Compatibilidad de Exportación Broadcast Receiver Android 14+ (ContextCompat)\n• OptIn UnstableApi en Media3 PlaybackService\n• Motor de Audio: Jetpack Media3 (ExoPlayer) + Normalización Inteligente de Volumen\n• DSP Nativo por Hardware: 5 Bandas EQ Auto-por-Género + Loudness Boost (+10dB) + Bass Boost Ultra + Virtualizador 3D Espacial\n• Visualización de Audio: 3 Modos de Forma de Onda (Barras de Neón, Onda Continua y Puntos Minimalistas)\n• Editor de Etiquetas: Edición directa de Metadatos y Letras en tiempo real\n• Temporizador Inteligente: Apagado programado con atenuación progresiva de volumen (Fade-out)\n• Consumo activo: < 60 MB RAM (1 GB hardware optimizado)",
+                    text = "• Versión de compilación: 4.2.0 (Build 6)\n• Panel Interactivo de Cola de Reproducción (Playback Queue Sheet)\n• Visualización de Próximas Canciones en Cola y Biblioteca\n• Gestión Dinámica de Cola: Reordenar, Eliminar y Vaciar Cola\n• Motor de Audio: Jetpack Media3 (ExoPlayer) + Normalización Inteligente de Volumen\n• DSP Nativo por Hardware: 5 Bandas EQ Auto-por-Género + Loudness Boost (+10dB) + Bass Boost Ultra + Virtualizador 3D Espacial\n• Visualización de Audio: 3 Modos de Forma de Onda (Barras de Neón, Onda Continua y Puntos Minimalistas)\n• Editor de Etiquetas: Edición directa de Metadatos y Letras en tiempo real\n• Consumo activo: < 60 MB RAM (1 GB hardware optimizado)",
                     fontSize = 11.sp,
                     color = TextSecondary,
                     lineHeight = 16.sp

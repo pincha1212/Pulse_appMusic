@@ -103,6 +103,7 @@ import com.example.data.CancionEntity
 import com.example.data.PlaylistEntity
 import com.example.ui.components.ExpandedPlayerSheet
 import com.example.ui.components.MiniPlayerBar
+import com.example.ui.components.PlaybackQueueSheet
 import com.example.ui.components.SettingsBottomSheet
 import com.example.ui.components.SongItemRow
 import com.example.ui.theme.AccentGradientEnd
@@ -125,6 +126,7 @@ fun PulseApp(viewModel: MusicViewModel) {
     val settingsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val expandedPlayerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val addToPlaylistSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val queueSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // BackHandler for sub-views
     BackHandler(enabled = uiState.selectedPlaylist != null || uiState.selectedAlbum != null || uiState.selectedTab != LibraryTab.ALL) {
@@ -455,7 +457,35 @@ fun PulseApp(viewModel: MusicViewModel) {
                     onToggleLyricsView = viewModel::toggleLyricsView,
                     visualizerMode = uiState.visualizerMode,
                     onToggleVisualizerMode = { viewModel.setVisualizerMode((uiState.visualizerMode + 1) % 3) },
+                    onOpenQueue = { viewModel.setQueueSheetOpen(true) },
                     onDismissRequest = { viewModel.setPlayerExpanded(false) }
+                )
+            }
+
+            // Playback Queue Modal Sheet (v4.2.0)
+            if (uiState.isQueueSheetOpen) {
+                val currentSong = uiState.cancionActual
+                val songsList = uiState.canciones
+                val currentIndex = if (currentSong != null) songsList.indexOfFirst { it.id == currentSong.id } else -1
+                val upcomingSongs = if (currentIndex >= 0 && currentIndex < songsList.size - 1) {
+                    songsList.subList(currentIndex + 1, songsList.size)
+                } else {
+                    emptyList()
+                }
+
+                PlaybackQueueSheet(
+                    sheetState = queueSheetState,
+                    cancionActual = currentSong,
+                    isPlaying = uiState.isPlaying,
+                    playbackQueue = uiState.playbackQueue,
+                    upcomingLibrarySongs = upcomingSongs,
+                    onSongClick = { song ->
+                        viewModel.play(song)
+                        viewModel.setQueueSheetOpen(false)
+                    },
+                    onRemoveFromQueue = viewModel::removeFromQueue,
+                    onClearQueue = viewModel::clearQueue,
+                    onDismissRequest = { viewModel.setQueueSheetOpen(false) }
                 )
             }
 
