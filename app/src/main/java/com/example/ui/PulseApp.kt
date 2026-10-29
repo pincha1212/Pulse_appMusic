@@ -1083,7 +1083,7 @@ private fun TopHeaderSection(
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "v4.0.0",
+                        text = "v4.1.0",
                         color = ElectricCyan,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold

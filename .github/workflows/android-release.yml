@@ -64,7 +64,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: ${{ github.ref_name == 'main' || github.ref_name == 'master' && format('v4.0.{0}', github.run_number) || github.ref_name }}
+          tag_name: ${{ github.ref_name == 'main' || github.ref_name == 'master' && format('v4.1.{0}', github.run_number) || github.ref_name }}
           name: Pulse Music Player Release ${{ github.ref_name }}
           body: |
             ## Pulse Music Player - Actualización Automática OTA
